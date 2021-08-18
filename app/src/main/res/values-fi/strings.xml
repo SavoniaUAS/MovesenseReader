@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Movesense</string>
+    <string name="scan_scanButton">Hae Laitteita</string>
+    <string name="scan_title">Valitse laite listalta</string>
+    <string name="parameters_column_choice">Valinta</string>
+    <string name="parameters_column_measurement_interval">Mittausväli</string>
+    <string name="parameters_column_parameter">Parametri</string>
+    <string name="parameters_parameter_battery_level">Pariston taso</string>
+    <string name="parameters_parameter_ecg">EKG</string>
+    <string name="parameters_parameter_gyroscope">Gyroskooppi</string>
+    <string name="parameters_parameter_heart_rate">Sydämen syke</string>
+    <string name="parameters_parameter_linear_acceleration">Lineaarinen kiihtyvyys</string>
+    <string name="parameters_parameter_magnetometer">Magnetometri</string>
+    <string name="parameters_parameter_temperature">Lämpötila</string>
+    <string name="parameters_title">Valitse mittauksen parametrit</string>
+    <string name="hello_blank_fragment">Tyhjä fragmentti</string>
+    <string name="configuration_choose_button">Vahvista SaMi-palvelun tiedot</string>
+    <string name="configuration_sami_object_help">Objektin nimi</string>
+    <string name="configuration_sami_tag_help">Mittauksen lisätiedot</string>
+    <string name="configuration_sami_writekey_help">Kirjoitusavain</string>
+    <string name="configuration_title">Valitse SaMi-palvelun tiedot</string>
+    <string name="parameteres_parameter_start_button">Aloita mittaus</string>
+    <string name="collector_cancel_button">Lopeta mittaus</string>
+    <string name="collector_title">Mittaus on käynnissä</string>
+    <string name="parameters_parameter_start_button_on_progress">Lopeta mittaus</string>
+    <string name="parameters_parameter_title_on_progress">Mittaus on käynnissä</string>
+    <string name="loading_title">Odota!</string>
+    <string name="connecting_message">Yhdistetään laitteeseen</string>
+    <string name="scan_help">Paina ja pidä pohjassa valitaksesi laite</string>
+    <string name="unsubscribe_message">Pysäytetään mittauksia</string>
+    <string name="measurement_success">Mittaukset lähetetty onnistuneesti</string>
+    <string name="measurement_occured_error">Virhe tapahtui mittauksia lähetettäessä</string>
+    <string name="configuration_send_interval_help">Lähetysväli</string>
+    <string name="notification_bluetooth_must_be_on">Bluetooth on vaadittu sovelluksen käyttöön</string>
+    <string name="notification_location_is_required">Sijainti lupaa vaaditaan bluetooth laitteiden hakuun</string>
+    <string name="notification_movesense_disconnect">Yhteys laitteeseen on katkaistu</string>
+    <string name="notification_movesense_error">Virhe yhteydessä movesense laitteeseen</string>
+</resources>
