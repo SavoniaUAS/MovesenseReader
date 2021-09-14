@@ -12,6 +12,7 @@ public class SamiData
     {
         Tag = tag;
         Value = Double.valueOf(value);
+
     }
 
     public SamiData(String tag, long value)

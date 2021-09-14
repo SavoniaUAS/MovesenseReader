@@ -14,7 +14,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import androidx.core.util.Pair;
-import fi.digi.savonia.movesense.Models.MeasurementInterval;
+
 import fi.digi.savonia.movesense.Models.Movesense.Data.BatteryVoltageData;
 import fi.digi.savonia.movesense.Models.Movesense.Data.ECGData;
 import fi.digi.savonia.movesense.Models.Movesense.Data.GyroscopeData;
@@ -40,7 +40,19 @@ public class MeasurementHelper {
     public String HRDataTag = "Heartrate";
     public String HRDataTagRR = "RR interval";
     public String LinearAccelerationDataTag = "Linear Acceleration";
-    public String GyroscopeAccelerationDataTag = "Gyroscope";
+    public String Acc_X_Axis ="Acc_X";
+    public String Acc_Y_Axis ="Acc_Y";
+    public String Acc_Z_Axis ="Acc_Z";
+
+    public String Gyro_X_Axis ="Gyro_X";
+    public String Gyro_Y_Axis ="Gyro_Y";
+    public String Gyro_Z_Axis ="Gyro_Z";
+
+    public String Magn_X_Axis ="Magn_X";
+    public String Magn_Y_Axis ="Magn_Y";
+    public String Magn_Z_Axis ="Magn_Z";
+
+    public String GyroscopeDataTag = "Gyroscope";
     public String MagnetometerDataTag = "Magnetometer";
     public String MeasurementTag = "Measurement Tag";
     public String MeasurementObject = "Movesense Test";
@@ -52,6 +64,8 @@ public class MeasurementHelper {
     private SamiMeasurementHelper samiMeasurementHelper;
     private Timer timer;
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+    private long sensorTimestamp = 0;
+    private long timestamp;
 
     public String key = "savoniatest";
 
@@ -114,9 +128,20 @@ public class MeasurementHelper {
             timer = null;
             Send();
         }
+    }
 
+    private void SetTimestamp(long tempTimestamp)
+    {
+        if(sensorTimestamp==0)
+        {
+            sensorTimestamp = tempTimestamp;
+            timestamp = Calendar.getInstance().getTimeInMillis();
+        }
+    }
 
-
+    private long GetSensorRelativeTimestamp(long tempSensorTimestamp)
+    {
+        return timestamp + (tempSensorTimestamp-sensorTimestamp);
     }
 
     public void AddMeasurement(Object data, MovesenseHelper.Sensor sensor)
@@ -124,31 +149,39 @@ public class MeasurementHelper {
         switch (sensor)
         {
             case Temperature:
-                temperatureData.add(new Pair<>((TemperatureData) data, Calendar.getInstance().getTimeInMillis()));
+                SetTimestamp(((TemperatureData) data).Timestamp);
+                temperatureData.add(new Pair<>((TemperatureData) data, GetSensorRelativeTimestamp(((TemperatureData) data).Timestamp)));
                 break;
             case BatteryVoltage:
                 batteryVoltageData.add(new Pair<>((BatteryVoltageData) data,Calendar.getInstance().getTimeInMillis()));
                 break;
             case LinearAcceleration:
-                linearAccelerationData.add(new Pair<>((LinearAccelerationData) data,Calendar.getInstance().getTimeInMillis()));
+                SetTimestamp(((LinearAccelerationData) data).Timestamp);
+                linearAccelerationData.add(new Pair<>((LinearAccelerationData) data,GetSensorRelativeTimestamp(((LinearAccelerationData) data).Timestamp)));
                 break;
             case Gyroscope:
-                gyroscopeData.add(new Pair<>((GyroscopeData) data,Calendar.getInstance().getTimeInMillis()));
+                SetTimestamp(((GyroscopeData) data).Timestamp);
+                gyroscopeData.add(new Pair<>((GyroscopeData) data,GetSensorRelativeTimestamp(((GyroscopeData) data).Timestamp)));
                 break;
             case Magnetometer:
-                magnetometerData.add(new Pair<>((MagnetometerData) data,Calendar.getInstance().getTimeInMillis()));
+                SetTimestamp(((MagnetometerData) data).Timestamp);
+                magnetometerData.add(new Pair<>((MagnetometerData) data,GetSensorRelativeTimestamp(((MagnetometerData) data).Timestamp)));
                 break;
             case ECG:
-                ecgData.add(new Pair<>((ECGData) data,Calendar.getInstance().getTimeInMillis()));
+                SetTimestamp(((ECGData) data).Timestamp);
+                ecgData.add(new Pair<>((ECGData) data,GetSensorRelativeTimestamp(((ECGData) data).Timestamp)));
                 break;
             case IMU6:
-                imu6Data.add(new Pair<>((Imu6Data) data,Calendar.getInstance().getTimeInMillis()));
+                SetTimestamp(((Imu6Data) data).Timestamp);
+                imu6Data.add(new Pair<>((Imu6Data) data,GetSensorRelativeTimestamp(((Imu6Data) data).Timestamp)));
                 break;
             case IMU6m:
-                imu6mData.add(new Pair<>((Imu6mData) data,Calendar.getInstance().getTimeInMillis()));
+                SetTimestamp(((Imu6mData) data).Timestamp);
+                imu6mData.add(new Pair<>((Imu6mData) data,GetSensorRelativeTimestamp(((Imu6mData) data).Timestamp)));
                 break;
             case IMU9:
-                imu9Data.add(new Pair<>((Imu9Data) data,Calendar.getInstance().getTimeInMillis()));
+                SetTimestamp(((Imu9Data) data).Timestamp);
+                imu9Data.add(new Pair<>((Imu9Data) data,GetSensorRelativeTimestamp(((Imu9Data) data).Timestamp)));
                 break;
             case HeartRate:
                 heartrateData.add(new Pair<>((HeartrateData) data,Calendar.getInstance().getTimeInMillis()));
@@ -178,6 +211,7 @@ public class MeasurementHelper {
             samiMeasurementPackage.SetKey(key);
             samiMeasurementPackage.SetMeasurements(convertToMeasurementData());
             samiMeasurementHelper.SendMeasurement(samiMeasurementPackage);
+            sensorTimestamp = 0;
         }
 
     }
@@ -187,18 +221,24 @@ public class MeasurementHelper {
         return sdf.format(new Date(millis));
     }
 
+    private double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        long factor = (long) Math.pow(10, places);
+        value = value * factor;
+        long tmp = Math.round(value);
+        return (double) tmp / factor;
+    }
+
+    private long SequalTimestamp(long initialTimestamp,double timeDifferenceConstantMillis,int index)
+    {
+        return (long) (initialTimestamp+(timeDifferenceConstantMillis*index));
+    }
+
     private SamiMeasurement[] convertToMeasurementData()
     {
         List<SamiMeasurement> samiMeasurements = new ArrayList<>();
         List<SamiData> samiDatas = new ArrayList<>();
-        List<Float3DVector> float3DVectorsAcc = new ArrayList<>();
-        List<Float3DVector> float3DVectorsGyro = new ArrayList<>();
-        List<Float3DVector> float3DVectorsMagn = new ArrayList<>();
-        List<Integer> ecgCache = new ArrayList<>();
-        List<Float> hrCache = new ArrayList<>();
-
-        long tempMillis = 0;
-        boolean first = true;
 
         MeasurementTag = "Temperature";
 
@@ -208,6 +248,7 @@ public class MeasurementHelper {
             samiDatas.add(new SamiData(TemperatureDataTag,temp.first.ConvertToCelcius()));
             samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(temp.second),MeasurementTag,MeasurementNote,MeasurementObject));
             samiDatas.clear();
+
         }
 
         MeasurementTag = "Battery Level";
@@ -224,27 +265,39 @@ public class MeasurementHelper {
         if(ecgData.peek()!=null)
         {
             MeasurementTag = "Electrocardiogram";
+            long first =0,second =0;
+            int differenceMillis=0;
+
+            double timeDifferentConstant = 1/(250)*1000; //  TODO Mukautuva aikaero jälkeenpäin
 
             while(ecgData.peek()!=null)
             {
                 Pair<ECGData,Long> temp = ecgData.poll();
+                if(first ==0)
+                {
+                    first=temp.first.Timestamp;
+                }
+                else if(second==0)
+                {
+                    second=temp.first.Timestamp;
+                }
+                if(first!=0 & second!=0 & differenceMillis == 0)
+                {
+                    differenceMillis = (int) (second-first);
+                    timeDifferentConstant = differenceMillis/15.0;
+                }
+
+
+
                 for(int i = 0;i<temp.first.Samples.length;i++)
                 {
-                    ecgCache.add(temp.first.Samples[i]);
+                    samiDatas.add(new SamiData("Average",temp.first.Samples[i]));
+                    samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(SequalTimestamp(temp.second,timeDifferentConstant,i)),MeasurementTag,MeasurementNote,MeasurementObject));
+                    samiDatas.clear();
                 }
 
-                if(first)
-                {
-                    first = false;
-                    tempMillis = temp.second;
-                }
             }
 
-            samiDatas.add(new SamiData(ECGDataTag,gson.toJson(ecgCache)));
-            samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(tempMillis),MeasurementTag,MeasurementNote,MeasurementObject));
-            samiDatas.clear();
-            ecgCache.clear();
-            first=true;
         }
 
         MeasurementTag = "Heart rate";
@@ -255,20 +308,12 @@ public class MeasurementHelper {
                 {
                     Pair<HeartrateData,Long> temp = heartrateData.poll();
 
-                    hrCache.add(temp.first.average);
-
-                    if(first)
-                    {
-                        first = false;
-                        tempMillis = temp.second;
-                    }
+                    samiDatas.add(new SamiData("Average",temp.first.average));
+                    samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(temp.second),MeasurementTag,MeasurementNote,MeasurementObject));
+                    samiDatas.clear();
 
                 }
 
-                samiDatas.add(new SamiData(HRDataTag,gson.toJson(hrCache)));
-                samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(tempMillis),MeasurementTag,MeasurementNote,MeasurementObject));
-                samiDatas.clear();
-                hrCache.clear();
         }
 
         MeasurementTag = IMUDataTag;
@@ -278,24 +323,23 @@ public class MeasurementHelper {
             while(linearAccelerationData.peek()!=null)
             {
                 Pair<LinearAccelerationData,Long> temp = linearAccelerationData.poll();
+
+                double timeDifferentConstant = 1/(13*temp.first.ArrayAcc.length)*1000;
+
                 for(int i = 0; i<temp.first.ArrayAcc.length;i++)
                 {
-                    float3DVectorsAcc.add(temp.first.ArrayAcc[i]);
+                    samiDatas.add(new SamiData(Acc_X_Axis,temp.first.ArrayAcc[i].x));
+                    samiDatas.add(new SamiData(Acc_Y_Axis,temp.first.ArrayAcc[i].y));
+                    samiDatas.add(new SamiData(Acc_Z_Axis,temp.first.ArrayAcc[i].z));
+                    samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(SequalTimestamp(temp.second,timeDifferentConstant,i)),MeasurementTag,MeasurementNote,MeasurementObject));
+                    samiDatas.clear();
                 }
 
-                if(first)
-                {
-                    first = false;
-                    tempMillis = temp.second;
-                }
             }
 
-            samiDatas.add(new SamiData(LinearAccelerationDataTag,gson.toJson(float3DVectorsAcc)));
-            samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(tempMillis),MeasurementTag,MeasurementNote,MeasurementObject));
-            samiDatas.clear();
-            float3DVectorsAcc.clear();
-            first = true;
         }
+
+        MeasurementTag = IMUDataTag;
 
         if(gyroscopeData.peek() != null)
         {
@@ -303,154 +347,166 @@ public class MeasurementHelper {
             {
                 Pair<GyroscopeData,Long> temp = gyroscopeData.poll();
 
+                int timeDifferentConstant = 1/(13*temp.first.ArrayGyro.length)*1000;
+
                 for(int i = 0; i<temp.first.ArrayGyro.length;i++)
                 {
-                    float3DVectorsGyro.add(temp.first.ArrayGyro[i]);
+                    samiDatas.add(new SamiData(Gyro_X_Axis,temp.first.ArrayGyro[i].x));
+                    samiDatas.add(new SamiData(Gyro_Y_Axis,temp.first.ArrayGyro[i].y));
+                    samiDatas.add(new SamiData(Gyro_Z_Axis,temp.first.ArrayGyro[i].z));
+                    samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(SequalTimestamp(temp.second,timeDifferentConstant,i)),MeasurementTag,MeasurementNote,MeasurementObject));
+                    samiDatas.clear();
                 }
 
-                if(first)
-                {
-                    first = false;
-                    tempMillis = temp.second;
-                }
             }
-
-            samiDatas.add(new SamiData(GyroscopeAccelerationDataTag,gson.toJson(float3DVectorsGyro)));
-            samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(tempMillis),MeasurementTag,MeasurementNote,MeasurementObject));
-            samiDatas.clear();
-            float3DVectorsGyro.clear();
-            first=true;
         }
+
+        MeasurementTag = IMUDataTag;
 
         if(magnetometerData.peek() != null)
         {
-            while(magnetometerData.peek()!=null)
-            {
-                Pair<MagnetometerData,Long> temp = magnetometerData.poll();
-                for(int i = 0; i<temp.first.ArrayMagn.length;i++)
-                {
-                    float3DVectorsMagn.add(temp.first.ArrayMagn[i]);
-                }
+            while(magnetometerData.peek()!=null) {
+                Pair<MagnetometerData, Long> temp = magnetometerData.poll();
 
-                if(first)
-                {
-                    first = false;
-                    tempMillis = temp.second;
+                int timeDifferentConstant = 1/(13*temp.first.ArrayMagn.length)*1000;
+
+                for (int i = 0; i < temp.first.ArrayMagn.length; i++) {
+                    samiDatas.add(new SamiData(Magn_X_Axis, temp.first.ArrayMagn[i].x));
+                    samiDatas.add(new SamiData(Magn_Y_Axis, temp.first.ArrayMagn[i].y));
+                    samiDatas.add(new SamiData(Magn_Z_Axis, temp.first.ArrayMagn[i].z));
+                    samiMeasurements.add(new SamiMeasurement(samiDatas, ConvertMillisToISO8601(SequalTimestamp(temp.second,timeDifferentConstant,i)), MeasurementTag, MeasurementNote, MeasurementObject));
+                    samiDatas.clear();
                 }
             }
 
-            samiDatas.add(new SamiData(MagnetometerDataTag,gson.toJson(float3DVectorsMagn)));
-            samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(tempMillis),MeasurementTag,MeasurementNote,MeasurementObject));
-            samiDatas.clear();
-            float3DVectorsMagn.clear();
-            first = true;
         }
+
+        MeasurementTag = IMUDataTag;
 
         if(imu6Data.peek() != null)
         {
-            while(imu6Data.peek()!=null)
-            {
-                Pair<Imu6Data,Long> temp = imu6Data.poll();
-                for(int i = 0; i<temp.first.ArrayAcc.length;i++)
-                {
-                    float3DVectorsAcc.add(temp.first.ArrayAcc[i]);
+            while(imu6Data.peek()!=null) {
+                Pair<Imu6Data, Long> temp = imu6Data.poll();
+
+                int timeDifferentConstant = 1/(13*temp.first.ArrayAcc.length)*1000;
+
+                for (int i = 0; i < temp.first.ArrayAcc.length; i++) {
+                    samiDatas.add(new SamiData(Acc_X_Axis, temp.first.ArrayAcc[i].x));
+                    samiDatas.add(new SamiData(Acc_Y_Axis, temp.first.ArrayAcc[i].y));
+                    samiDatas.add(new SamiData(Acc_Z_Axis, temp.first.ArrayAcc[i].z));
+
+                    samiDatas.add(new SamiData(Gyro_X_Axis, temp.first.ArrayGyro[i].x));
+                    samiDatas.add(new SamiData(Gyro_Y_Axis, temp.first.ArrayGyro[i].y));
+                    samiDatas.add(new SamiData(Gyro_Z_Axis, temp.first.ArrayGyro[i].z));
+
+                    samiMeasurements.add(new SamiMeasurement(samiDatas, ConvertMillisToISO8601(SequalTimestamp(temp.second,timeDifferentConstant,i)), MeasurementTag, MeasurementNote, MeasurementObject));
+                    samiDatas.clear();
                 }
-                for(int i = 0; i<temp.first.ArrayGyro.length;i++)
-                {
-                    float3DVectorsGyro.add(temp.first.ArrayGyro[i]);
+                /*
+                for (int i = 0; i < temp.first.ArrayGyro.length; i++) {
+                    samiDatas.add(new SamiData(Gyro_X_Axis, temp.first.ArrayGyro[i].x));
+                    samiDatas.add(new SamiData(Gyro_Y_Axis, temp.first.ArrayGyro[i].y));
+                    samiDatas.add(new SamiData(Gyro_Z_Axis, temp.first.ArrayGyro[i].z));
+                    samiMeasurements.add(new SamiMeasurement(samiDatas, ConvertMillisToISO8601(temp.second), MeasurementTag, MeasurementNote, MeasurementObject));
+                    samiDatas.clear();
                 }
 
-                if(first)
-                {
-                    first = false;
-                    tempMillis = temp.second;
-                }
-
+                 */
             }
 
-            samiDatas.add(new SamiData(LinearAccelerationDataTag,gson.toJson(float3DVectorsAcc)));
-            samiDatas.add(new SamiData(GyroscopeAccelerationDataTag,gson.toJson(float3DVectorsGyro)));
-            samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(tempMillis),MeasurementTag,MeasurementNote,MeasurementObject));
-            samiDatas.clear();
-            float3DVectorsAcc.clear();
-            float3DVectorsGyro.clear();
-            first=true;
         }
+
+        MeasurementTag = IMUDataTag;
 
         if(imu6mData.peek() != null)
         {
-            while(imu6mData.peek()!=null)
-            {
-                Pair<Imu6mData,Long> temp = imu6mData.poll();
-                for(int i = 0; i<temp.first.ArrayAcc.length;i++)
-                {
-                    float3DVectorsAcc.add(temp.first.ArrayAcc[i]);
+            while(imu6mData.peek()!=null) {
+                Pair<Imu6mData, Long> temp = imu6mData.poll();
+
+                int timeDifferentConstant = 1/(13*temp.first.ArrayAcc.length)*1000;
+
+                for (int i = 0; i < temp.first.ArrayAcc.length; i++) {
+                    samiDatas.add(new SamiData(Acc_X_Axis, temp.first.ArrayAcc[i].x));
+                    samiDatas.add(new SamiData(Acc_Y_Axis, temp.first.ArrayAcc[i].y));
+                    samiDatas.add(new SamiData(Acc_Z_Axis, temp.first.ArrayAcc[i].z));
+
+                    samiDatas.add(new SamiData(Magn_X_Axis, temp.first.ArrayMagn[i].x));
+                    samiDatas.add(new SamiData(Magn_Y_Axis, temp.first.ArrayMagn[i].y));
+                    samiDatas.add(new SamiData(Magn_Z_Axis, temp.first.ArrayMagn[i].z));
+
+                    samiMeasurements.add(new SamiMeasurement(samiDatas, ConvertMillisToISO8601(SequalTimestamp(temp.second,timeDifferentConstant,i)), MeasurementTag, MeasurementNote, MeasurementObject));
+                    samiDatas.clear();
+                }
+                /*
+                for (int i = 0; i < temp.first.ArrayMagn.length; i++) {
+                    samiDatas.add(new SamiData(Magn_X_Axis, temp.first.ArrayMagn[i].x));
+                    samiDatas.add(new SamiData(Magn_Y_Axis, temp.first.ArrayMagn[i].y));
+                    samiDatas.add(new SamiData(Magn_Z_Axis, temp.first.ArrayMagn[i].z));
+                    samiMeasurements.add(new SamiMeasurement(samiDatas, ConvertMillisToISO8601(temp.second), MeasurementTag, MeasurementNote, MeasurementObject));
+                    samiDatas.clear();
                 }
 
-                for(int i = 0; i<temp.first.ArrayMagn.length;i++)
-                {
-                    float3DVectorsMagn.add(temp.first.ArrayMagn[i]);
-                }
-
-                if(first)
-                {
-                    first = false;
-                    tempMillis = temp.second;
-                }
-
+                 */
             }
 
-            samiDatas.add(new SamiData(LinearAccelerationDataTag,gson.toJson(float3DVectorsAcc)));
-            samiDatas.add(new SamiData(GyroscopeAccelerationDataTag,gson.toJson(float3DVectorsGyro)));
-            samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(tempMillis),MeasurementTag,MeasurementNote,MeasurementObject));
-            samiDatas.clear();
-            float3DVectorsAcc.clear();
-            float3DVectorsMagn.clear();
-            first=true;
+
         }
+
+        MeasurementTag = IMUDataTag;
 
         if(imu9Data.peek() != null)
         {
             while(imu9Data.peek()!=null)
             {
                 Pair<Imu9Data,Long> temp = imu9Data.poll();
+
+                int timeDifferentConstant = 1/(13*temp.first.ArrayAcc.length)*1000;
+
                 for(int i = 0; i<temp.first.ArrayAcc.length;i++)
                 {
-                    float3DVectorsAcc.add(temp.first.ArrayAcc[i]);
+                    samiDatas.add(new SamiData(Acc_X_Axis,temp.first.ArrayAcc[i].x));
+                    samiDatas.add(new SamiData(Acc_Y_Axis,temp.first.ArrayAcc[i].y));
+                    samiDatas.add(new SamiData(Acc_Z_Axis,temp.first.ArrayAcc[i].z));
+
+                    samiDatas.add(new SamiData(Gyro_X_Axis,temp.first.ArrayGyro[i].x));
+                    samiDatas.add(new SamiData(Gyro_Y_Axis,temp.first.ArrayGyro[i].y));
+                    samiDatas.add(new SamiData(Gyro_Z_Axis,temp.first.ArrayGyro[i].z));
+
+                    samiDatas.add(new SamiData(Magn_X_Axis,temp.first.ArrayMagn[i].x));
+                    samiDatas.add(new SamiData(Magn_Y_Axis,temp.first.ArrayMagn[i].y));
+                    samiDatas.add(new SamiData(Magn_Z_Axis,temp.first.ArrayMagn[i].z));
+
+                    samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(SequalTimestamp(temp.second,timeDifferentConstant,i)),MeasurementTag,MeasurementNote,MeasurementObject));
+                    samiDatas.clear();
                 }
 
+                /*
                 for(int i = 0; i<temp.first.ArrayGyro.length;i++)
                 {
-                    float3DVectorsGyro.add(temp.first.ArrayGyro[i]);
+                    samiDatas.add(new SamiData(Gyro_X_Axis,temp.first.ArrayGyro[i].x));
+                    samiDatas.add(new SamiData(Gyro_Y_Axis,temp.first.ArrayGyro[i].y));
+                    samiDatas.add(new SamiData(Gyro_Z_Axis,temp.first.ArrayGyro[i].z));
+                    samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(temp.second),MeasurementTag,MeasurementNote,MeasurementObject));
+                    samiDatas.clear();
                 }
 
                 for(int i = 0; i<temp.first.ArrayMagn.length;i++)
                 {
-                    float3DVectorsMagn.add(temp.first.ArrayMagn[i]);
+                    samiDatas.add(new SamiData(Magn_X_Axis,temp.first.ArrayMagn[i].x));
+                    samiDatas.add(new SamiData(Magn_Y_Axis,temp.first.ArrayMagn[i].y));
+                    samiDatas.add(new SamiData(Magn_Z_Axis,temp.first.ArrayMagn[i].z));
+                    samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(temp.second),MeasurementTag,MeasurementNote,MeasurementObject));
+                    samiDatas.clear();
                 }
+                */
 
-                if(first)
-                {
-                    first = false;
-                    tempMillis = temp.second;
-                }
 
             }
 
-            samiDatas.add(new SamiData(LinearAccelerationDataTag,gson.toJson(float3DVectorsAcc)));
-            samiDatas.add(new SamiData(GyroscopeAccelerationDataTag,gson.toJson(float3DVectorsGyro)));
-            samiDatas.add(new SamiData(MagnetometerDataTag,gson.toJson(float3DVectorsMagn)));
-            samiMeasurements.add(new SamiMeasurement(samiDatas,ConvertMillisToISO8601(tempMillis),MeasurementTag,MeasurementNote,MeasurementObject));
-            samiDatas.clear();
-            float3DVectorsAcc.clear();
-            float3DVectorsGyro.clear();
-            float3DVectorsMagn.clear();
-            first=true;
         }
 
         return samiMeasurements.toArray(new SamiMeasurement[samiMeasurements.size()]);
 
     }
-
 
 }
